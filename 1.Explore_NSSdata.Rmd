@@ -1,0 +1,264 @@
+---
+title: "Summarise_NSS_Dataset"
+author: "Danielle L. Buss"
+date: "2024-03-01"
+output: html_document
+---
+
+## Loading NSS database
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Load data into global environment
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+load("~/Documents/4-Oceans/3.NSS/March2024/NSS_July2023.RData")
+```
+
+```{r, Load libraries, dataset and check headers, include=FALSE}
+head(df)
+theme_publish <- function(base_size = 12, base_family = "",
+                          line_size = 0.25, ...) {
+  half_line <- base_size / 2
+  small_rel <- 0.8
+  small_size <- small_rel * base_size
+  
+  theme_bw(base_size = base_size, base_family = base_family, ...) %+replace%
+    theme(
+      rect = element_rect(fill = "transparent", colour = NA, color = NA,
+                          linewidth = 0, linetype = 0),
+      text = element_text(family = base_family, face = "plain",
+                          colour = "black", size = base_size, hjust = 0.5,
+                          vjust = 0.5, angle = 0, lineheight = 0.9,
+                          margin = ggplot2::margin(), debug = F),
+      
+      axis.text = element_text(size = small_size),
+      axis.text.x = element_text(margin = ggplot2::margin(t = small_size/4),
+                                 vjust = 1),
+      axis.text.y = element_text(margin = ggplot2::margin(r = small_size/4), 
+                                 hjust = 1),
+      axis.title.x = element_text(margin = ggplot2::margin(t = small_size,
+                                                           b = small_size)),
+      axis.title.y = element_text(angle = 90,
+                                  margin = ggplot2::margin(r = small_size,
+                                                           l = small_size/4)),
+      axis.ticks = element_line(colour = "black", linewidth = line_size),
+      axis.ticks.length = unit(0.25, 'lines'),
+      
+      axis.line = element_line(colour = "black", linewidth = line_size),
+      axis.line.x = element_line(colour = "black", linewidth = line_size), 
+      axis.line.y = element_line(colour = "black", linewidth = line_size), 
+      
+      legend.spacing = unit(base_size/4, "pt"),
+      legend.key = element_blank(),
+      legend.key.size = unit(1 * base_size, "pt"),
+      legend.key.width = unit(1.5 * base_size, 'pt'),
+      legend.text = element_text(size = rel(small_rel)),
+      legend.title = element_text(size = rel(small_rel), face = 'bold'),
+      legend.position = 'bottom',
+      legend.box = 'horizontal',
+      
+      panel.spacing = unit(1, "lines"),
+      panel.background = element_blank(),
+      panel.border = element_blank(), 
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      
+      strip.text = element_text(size = base_size),
+      strip.background = element_rect(fill = NA, colour = "black", linewidth = 0.125),
+      strip.text.x = element_text(face = 'bold', hjust = 0,
+                                  margin = ggplot2::margin(b = small_size/2,
+                                                           t = small_size/4)),
+      strip.text.y = element_text(angle = -90, face = 'bold',
+                                  margin = ggplot2::margin(l = small_size/2,
+                                                           r = small_size/4)),
+      
+      plot.margin = unit(c(5,5,0,0), "pt"),
+      plot.background = element_blank(),
+      plot.title = element_text(face = "bold", size = 1.2 * base_size, 
+                                margin = ggplot2::margin(b = half_line),
+                                hjust = 0)
+    )
+}
+```
+
+## Summarising NSS database:
+
+### Number of countries
+```{r, countries}
+length(unique(df$Country))
+unique(df$Country)
+```
+
+### Number of countries
+```{r, sites}
+length(unique(df$Site.name))
+aggregate(Site.name ~ Country, data=unique(df[c("Site.name","Country")]), FUN=length)
+```
+### Number of assemblages
+```{r, assemblages}
+length(unique(df$Assemblage.or.sub.assemblage))
+aggregate(Assemblage.or.sub.assemblage ~ Country, data=unique(df[c("Assemblage.or.sub.assemblage","Country")]), FUN=length)
+```
+
+#### When were NISP data reported by country 
+```{r, Year.reported}
+ggplot(df, aes(Year.reported, color=Country, fill=Country)) + geom_histogram(bins=8) + facet_wrap(~Country, nrow=2) + theme_publish() + 
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8) + theme(legend.position = "none")
+```
+
+#### Counts of urban and rural 
+```{r, urban and rural }
+aggregate(Assemblage.or.sub.assemblage ~ Rural.urban.or.neither, data=unique(df[c("Assemblage.or.sub.assemblage","Rural.urban.or.neither")]), FUN=length)
+df_tmp<-aggregate(Assemblage.or.sub.assemblage ~ Rural.urban.or.neither + Country, data=unique(df[c("Assemblage.or.sub.assemblage","Rural.urban.or.neither", "Country")]), FUN=length)
+ggplot(df_tmp, aes(Rural.urban.or.neither, Assemblage.or.sub.assemblage, fill=Country)) + geom_bar(stat="identity") + facet_wrap(~Country, nrow=2) + theme_publish() + 
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none")
+```
+
+#### Start.date to End.Date
+```{r, Start and End Date, warnings = FALSE}
+df_tmp<-unique(df[c("Assemblage.or.sub.assemblage","Start.date.CE", "End.date.CE","Country")])
+df_tmp$Assemblage.or.sub.assemblage<-as.factor(df_tmp$Assemblage.or.sub.assemblage)
+ggplot(df_tmp) +
+  geom_segment(size=6,alpha=0.8, aes(x=Start.date.CE, xend=End.date.CE, color=Country, y=fct_reorder(Assemblage.or.sub.assemblage,
+                                                                                                     Start.date.CE, min),
+                                     yend=fct_reorder(Assemblage.or.sub.assemblage, Start.date.CE, min))) + facet_wrap(~Country) + labs(x="Year", y ="No. Assemblages") + theme_publish() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_line(size = 5),
+        axis.title.x = element_text(size=18),
+        plot.title = element_text(size=20),
+        axis.text.x = element_text(size=16),
+        strip.text = element_text(size=20)) +
+  scale_color_brewer(type = "qual", palette = 8)  + theme(legend.position = "none")
+```
+
+#### Start.date to End.Date - < 400 yrs chronology
+```{r, Start and End Date < 400 yrs}
+df$time.range<-df$End.date.CE - df$Start.date.CE
+df %>%
+  filter(!is.na(time.range)) %>%
+  filter(Start.date.CE > 0) %>%
+  filter(End.date.CE > 0) %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  ggplot() +
+  geom_segment(size=6,alpha=0.8, aes(x=Start.date.CE, xend=End.date.CE, color=Country, y=fct_reorder(Assemblage.or.sub.assemblage,
+                                                                                                     Start.date.CE, min),
+                                     yend=fct_reorder(Assemblage.or.sub.assemblage, Start.date.CE, min))) + facet_wrap(~Country) + labs(x="Year", y ="No. Assemblages") + theme_publish() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_line(size = 5),
+        axis.title.x = element_text(size=18),
+        plot.title = element_text(size=20),
+        axis.text.x = element_text(size=16),
+        strip.text = element_text(size=20)) +
+  scale_color_brewer(type = "qual", palette = 8)  + theme(legend.position = "none")
+```
+
+#### Start.date to End.Date - < 300 yrs chronology
+```{r, Start and End Date < 300 yrs}
+df %>%
+  filter(!is.na(time.range)) %>%
+  filter(Start.date.CE > 0) %>%
+  filter(End.date.CE > 0) %>%
+  filter((End.date.CE - Start.date.CE) < 300) %>%
+  ggplot() +
+  geom_segment(size=6,alpha=0.8, aes(x=Start.date.CE, xend=End.date.CE, color=Country, y=fct_reorder(Assemblage.or.sub.assemblage,
+                                                                                                     Start.date.CE, min),
+                                     yend=fct_reorder(Assemblage.or.sub.assemblage, Start.date.CE, min))) + facet_wrap(~Country) + labs(x="Year", y ="No. Assemblages") + theme_publish() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_line(size = 5),
+        axis.title.x = element_text(size=18),
+        plot.title = element_text(size=20),
+        axis.text.x = element_text(size=16),
+        strip.text = element_text(size=20)) +
+  scale_color_brewer(type = "qual", palette = 8)  + theme(legend.position = "none")
+```
+
+#### Start.date to End.Date - < 200 yrs chronology
+```{r, Start and End Date < 200 yrs}
+df %>%
+  filter(!is.na(time.range)) %>%
+  filter(Start.date.CE > 0) %>%
+  filter(End.date.CE > 0) %>%
+  filter((End.date.CE - Start.date.CE) < 200) %>%
+  ggplot() +
+  geom_segment(size=6,alpha=0.8, aes(x=Start.date.CE, xend=End.date.CE, color=Country, y=fct_reorder(Assemblage.or.sub.assemblage,
+                                                                                                     Start.date.CE, min),
+                                     yend=fct_reorder(Assemblage.or.sub.assemblage, Start.date.CE, min))) + facet_wrap(~Country) + labs(x="Year", y ="No. Assemblages") + theme_publish() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_line(size = 5),
+        axis.title.x = element_text(size=18),
+        plot.title = element_text(size=20),
+        axis.text.x = element_text(size=16),
+        strip.text = element_text(size=20)) +
+  scale_color_brewer(type = "qual", palette = 8)  + theme(legend.position = "none")
+```
+
+```{r, Recovery method per country}
+df_tmp<-aggregate(Assemblage.or.sub.assemblage ~ Recovery.method..hand.collected..sieved..both..unknown. + Country, data=unique(df[c("Assemblage.or.sub.assemblage","Recovery.method..hand.collected..sieved..both..unknown.", "Country")]), FUN=length)
+ggplot(df_tmp, aes(Recovery.method..hand.collected..sieved..both..unknown., Assemblage.or.sub.assemblage, fill=Country)) + geom_bar(stat="identity") + facet_wrap(~Country, nrow=2) + theme_publish() + 
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+
+```{r, No. of unidentified specimens per country}
+df_tmp<-aggregate(Number.of.unidentified.fish.specimens ~ Country, data=df, FUN=sum)
+ggplot(df_tmp, aes(Number.of.unidentified.fish.specimens, Country, fill=Country)) + geom_bar(stat="identity") + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+
+```{r, No. of identified specimens per country}
+df_tmp<-aggregate(Total.Fish.NISP ~ Country, data=df, FUN=sum)
+ggplot(df_tmp, aes(Total.Fish.NISP, Country, fill=Country)) + geom_bar(stat="identity") + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+```{r, No. of identified specimens per red/amber/green per country}
+df_tmp<-aggregate(Total.Fish.NISP ~ Data.quality..green.amber.or.red. + Country, data=df, FUN=sum)
+ggplot(df_tmp, aes(Total.Fish.NISP, Country, fill=Country)) + geom_bar(stat="identity") + facet_wrap(~Data.quality..green.amber.or.red.) + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+
+#### Need to lump sieved & hand_collected data per assemblage here (NDY)
+
+```{r, No. of identified specimens per red/amber/green per country <400 yrs}
+df_tmp<-aggregate(Total.Fish.NISP ~ Data.quality..green.amber.or.red. + Country, data=df[df$time.range < 400,], FUN=sum)
+ggplot(df_tmp, aes(Total.Fish.NISP, Country, fill=Country)) + geom_bar(stat="identity") + facet_wrap(~Data.quality..green.amber.or.red.) + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+
+```{r, No. of identified specimens per assemblage per country <400 yrs}
+df_tmp<-aggregate(Total.Fish.NISP ~ Assemblage.or.sub.assemblage + Country, data=df[df$time.range < 400,], FUN=sum)
+ggplot(df_tmp, aes(log(Total.Fish.NISP), color=Country, fill=Country)) + geom_histogram(bins=6) + facet_wrap(~Country) + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                         axis.text.x = element_text(angle=45, hjust=1))
+```
+
+```{r, Remove smallest and largest assemblages}
+quantile(df$Total.Fish.NISP, 0.975)
+quantile(df$Total.Fish.NISP, 0.025)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400)
+ggplot(df_tmp, aes(Total.Fish.NISP, color=Country, fill=Country)) + geom_histogram(bins=6) + facet_wrap(~Country) + theme_publish() +
+  scale_color_brewer(type = "qual", palette = 8) + 
+  scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
+                                                      axis.text.x = element_text(angle=45, hjust=1))
+```
