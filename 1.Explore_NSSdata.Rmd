@@ -262,3 +262,200 @@ ggplot(df_tmp, aes(Total.Fish.NISP, color=Country, fill=Country)) + geom_histogr
   scale_fill_brewer(type = "qual", palette = 8)  + theme(legend.position = "none",
                                                       axis.text.x = element_text(angle=45, hjust=1))
 ```
+###Counts by taxa (top 50)
+```{r, Counts per taxa}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ GBIF_species, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 5.9)
+ggplot(df_tmp, aes(log(NISP_count))) + geom_histogram(bins=50)
+df_tmp<-df_tmp %>% filter(!GBIF_species == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(GBIF_species, NISP_count), fill=GBIF_species)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Species")
+```
+###Counts by taxa (excluding taxa with low counts)
+```{r, Counts per genus}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ GBIF_genus, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 5.9)
+df_tmp<-df_tmp %>% filter(!GBIF_genus == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(GBIF_genus, NISP_count), fill=GBIF_genus)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Genus")
+```
+```{r, Counts per family top 30}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ GBIF_family, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 5.9)
+df_tmp<-df_tmp %>% filter(!GBIF_family == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(GBIF_family, NISP_count), fill=GBIF_family)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Genus")
+```
+```{r, Counts per order top 20}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ GBIF_order, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!GBIF_order == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(GBIF_order, NISP_count), fill=GBIF_order)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Genus")
+```
+###Counts by traits
+```{r, Counts per traits - habitat}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ Trait_Habitat, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!Trait_Habitat == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_Habitat, NISP_count), fill=Trait_Habitat)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Habitat")
+```
+
+```{r, Counts per traits - foodweb}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ Trait_Foodweb, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!Trait_Foodweb == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_Foodweb, NISP_count), fill=Trait_Foodweb)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Foodweb")
+```
+```{r, Counts per traits - life history strategy}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ Trait_LifeHistory, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!Trait_LifeHistory == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_LifeHistory, NISP_count), fill=Trait_LifeHistory)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Life history strategy")
+```
+```{r, Counts per traits - temp range}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp$temp.range<-as.numeric(df_tmp$Trait_Temp_Max) - as.numeric(df_tmp$Trait_Temp_Min)
+df_tmp<-aggregate(NISP_count ~ temp.range, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 7)
+df_tmp<-df_tmp %>% filter(!temp.range == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(temp.range, as.numeric(temp.range)), fill=temp.range)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Temp range")
+```
+```{r, Counts per traits - temp midpoint}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp$temp.midpoint<-as.numeric(df_tmp$Trait_Temp_Max) - ((as.numeric(df_tmp$Trait_Temp_Max) - as.numeric(df_tmp$Trait_Temp_Min))/2)
+df_tmp<-aggregate(NISP_count ~ temp.midpoint, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 7)
+df_tmp<-df_tmp %>% filter(!temp.midpoint == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(temp.midpoint, as.numeric(temp.midpoint)), fill=temp.midpoint)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Temp midpoint")
+```
+```{r, Counts per traits - temp min}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp$Trait_Temp_Min<-as.numeric(df_tmp$Trait_Temp_Min)
+df_tmp<-aggregate(NISP_count ~ Trait_Temp_Min, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 7)
+df_tmp<-df_tmp %>% filter(!Trait_Temp_Min == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_Temp_Min, Trait_Temp_Min), fill=Trait_Temp_Min)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Temp range min")
+```
+```{r, Counts per traits - temp max}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp$Trait_Temp_Max<-as.numeric(df_tmp$Trait_Temp_Max)
+df_tmp<-aggregate(NISP_count ~ Trait_Temp_Max, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 7)
+df_tmp<-df_tmp %>% filter(!Trait_Temp_Max == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_Temp_Max, Trait_Temp_Max), fill=Trait_Temp_Max)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Temp range max")
+```
+
+```{r, Counts per traits - endangerment status}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ Trait_endangered, data=df_tmp, FUN=sum)
+df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!Trait_endangered == "NA")
+ggplot(df_tmp, aes(NISP_count, reorder(Trait_endangered, NISP_count), fill=Trait_endangered)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="Total number of identified specimens", y="Genus")
+```
+```{r, Critically endangered species/counts/country}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+#df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude)) %>%
+  filter(Trait_endangered == "Critically endangered")
+df_tmp$all<-"All"
+df_tmp<-aggregate(NISP_count ~ Country + GBIF_species, data=df_tmp, FUN=sum)
+#df_tmp<-df_tmp %>% filter(log(NISP_count) > 4)
+df_tmp<-df_tmp %>% filter(!GBIF_species == "NA")
+ggplot(df_tmp, aes(log(NISP_count), reorder(Country, NISP_count), fill=GBIF_species)) + geom_bar(stat="identity") + theme_publish() + theme(legend.position = "none") + labs(x="log(Total number of identified specimens)", y="Species") + facet_wrap(~GBIF_species)
+```
+
+###By Ocean
+```{r, Summary data by "Sea"}
+rm(df_tmp)
+df_tmp<-df %>% filter(Total.Fish.NISP < quantile(df$Total.Fish.NISP, 0.975))
+df_tmp<-df_tmp %>% filter(Total.Fish.NISP > quantile(df$Total.Fish.NISP, 0.025)) 
+df_tmp<- df_tmp %>%
+  filter((End.date.CE - Start.date.CE) < 400) %>%
+  filter(complete.cases(Decimal.Longitude, Decimal.Latitude))
+df_tmp$all<-"All"
+a<-df_tmp %>% mutate(binlon = cut(Decimal.Longitude, seq(from = min(Decimal.Longitude), to = max(Decimal.Longitude), by = 10), include.lowest = T, right = F),
+           binlat = cut(Decimal.Latitude, seq(from = min(Decimal.Latitude), to = max(Decimal.Latitude), by = 10), include.lowest = T, right = F)) %>% 
+    group_by(all, binlat, binlon) %>% 
+    summarise(count = sum(Total.Fish.NISP))
+df$Ocean<-recode(df$Country)
+
+```
