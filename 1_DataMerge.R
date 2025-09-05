@@ -635,6 +635,21 @@ df_NISP %>%
     total_NISP = sum(as.numeric(NISP), na.rm = TRUE)
   )
 
+df_NISP %>%
+  group_by(database) %>%
+  summarise(
+    total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+    Assemblage_count = n_distinct(`NSS unique ID`),
+    Taxa = n_distinct(`Original_name`)
+  )
+
+df_NISP %>%
+  summarise(
+    total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+    Assemblage_count = n_distinct(`NSS unique ID`),
+    Taxa = n_distinct(`Original_name`)
+  )
+
 saveRDS(c(df_NISP, df_Meta), file = "NSS_longformat_Aug2025.R")
 write_xlsx(df_Meta, "NSS_metadata_Aug2025.xlsx", col_names = TRUE, format_headers = TRUE)
 write_xlsx(df_NISP, "NSS_NISPData_Aug2025.xlsx", col_names = TRUE, format_headers = TRUE)
@@ -649,43 +664,43 @@ taxa_new<-taxa_meta
 df_NISP_new<-merge(df_all, taxa_new, all.x = T, by="Original_name")
 sum(as.numeric(df_NISP_new$NISP), na.rm=T)
 new<-df_NISP_new[is.na(df_NISP_new$Taxa_cleaned),]
-#15 Belgium assemblages that don't have fish taxa listed here only
+#The 15 Belgium assemblages that don't have fish taxa listed here only
 
 df_NISP_new<-df_NISP_new[!is.na(df_NISP_new$Taxa_cleaned),]
-###Summary stats of taxon 
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(Taxa_cleaned))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(Taxa_cleaned))
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(GBIF_class))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_class))
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(GBIF_order))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_order))
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(GBIF_family))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_family))
-unique(df_NISP_new$GBIF_class)
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_family))
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(GBIF_genus))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_genus))
-df_NISP_new %>% 
-  group_by(Database) %>% 
-  summarise(UniqueCount = n_distinct(GBIF_species))
-df_NISP_new %>% 
-  summarise(UniqueCount = n_distinct(GBIF_species))
+###Summary stats of taxon (old)
+#cols <- c("Taxa_cleaned", "GBIF_class", "GBIF_order", 
+#          "GBIF_family", "GBIF_genus", "GBIF_species")
+#
+## Combine results
+#results <- map_dfr(cols, ~get_counts(df_NISP_new, .x)) %>%
+#  bind_rows(map_dfr(cols, ~get_overall(df_NISP_new, .x)))
+#
+#check<-data.frame(results)
+
+#Summary stats of taxon and counts ####
+totalcounts<-df_NISP_new %>% 
+  summarise(SiteCount = n_distinct(`Site name`),
+            AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
+            total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+            SpeciesCount = n_distinct(`GBIF_species`),
+            GeneraCount = n_distinct(`GBIF_genus`),
+            FamilyCount = n_distinct(`GBIF_family`),
+            OrderCount = n_distinct(`GBIF_order`),
+            ClassCount = n_distinct(`GBIF_class`))
+
+databasecounts<-df_NISP_new %>% 
+  group_by(database) %>%
+  summarise(SiteCount = n_distinct(`Site name`),
+            AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
+            total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+            SpeciesCount = n_distinct(`GBIF_species`),
+            GeneraCount = n_distinct(`GBIF_genus`),
+            FamilyCount = n_distinct(`GBIF_family`),
+            OrderCount = n_distinct(`GBIF_order`),
+            ClassCount = n_distinct(`GBIF_class`))
+
+write_xlsx(totalcounts, "totalcounts.xlsx")
+write_xlsx(databasecounts, "databasecounts.xlsx")
 
 ###Sort out typos
 #df_NISP_new$`End date CE`[df_NISP_new$`NSS unique ID`=="21611"]<-"125"
@@ -772,6 +787,27 @@ df_final<-df_final[,c(1:78)]
 
 df_final$`Decimal Latitude`<-round(as.numeric(df_final$`Decimal Latitude`),3)
 df_final$`Decimal Longitude`<-round(as.numeric(df_final$`Decimal Longitude`),3)
+
+df_NISP_new %>% 
+  summarise(SiteCount = n_distinct(`Site name`),
+            AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
+            total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+            SpeciesCount = n_distinct(`GBIF_species`),
+            GeneraCount = n_distinct(`GBIF_genus`),
+            FamilyCount = n_distinct(`GBIF_family`),
+            OrderCount = n_distinct(`GBIF_order`),
+            ClassCount = n_distinct(`GBIF_class`))
+
+df_NISP_new %>% 
+  group_by(database) %>%
+  summarise(SiteCount = n_distinct(`Site name`),
+            AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
+            total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+            SpeciesCount = n_distinct(`GBIF_species`),
+            GeneraCount = n_distinct(`GBIF_genus`),
+            FamilyCount = n_distinct(`GBIF_family`),
+            OrderCount = n_distinct(`GBIF_order`),
+            ClassCount = n_distinct(`GBIF_class`))
 
 write_xlsx(df_final, "All_Data_with_Chronology_Aug2025.xlsx", col_names = TRUE, format_headers = TRUE)
 saveRDS(df_final, file = "All_Data_with_Chronology_Aug2025.R")
