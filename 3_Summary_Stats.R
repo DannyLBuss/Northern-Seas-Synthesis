@@ -99,9 +99,9 @@ df_species %>%
 
 df_species %>% 
   dplyr::select(GBIF_family,GBIF_species, GBIF_class, GBIF_order, GBIF_genus, count) %>% 
-  filter(!GBIF_family == "NA") %>%
-  group_by(count) %>%
-  summarize(Families = length(unique(GBIF_family)),,
+  dplyr::filter(!GBIF_family == "NA") %>%
+  dplyr::group_by(count) %>%
+  dplyr::summarize(Families = length(unique(GBIF_family)),,
             Class = length(unique(GBIF_class)),
             Order = length(unique(GBIF_order)),
             Genera = length(unique(GBIF_genus)),
@@ -109,9 +109,9 @@ df_species %>%
 
 df_species %>% 
   dplyr::select(GBIF_family,GBIF_species, GBIF_class, GBIF_order, GBIF_genus, count, Region) %>% 
-  filter(!GBIF_family == "NA") %>%
-  group_by(count, Region) %>%
-  summarize(Families = length(unique(GBIF_family)),,
+  dplyr::filter(!GBIF_family == "NA") %>%
+  dplyr::group_by(count, Region) %>%
+  dplyr::summarize(Families = length(unique(GBIF_family)),,
             Class = length(unique(GBIF_class)),
             Order = length(unique(GBIF_order)),
             Genera = length(unique(GBIF_genus)),
@@ -119,12 +119,26 @@ df_species %>%
 
 #Prop sieved
 df_species %>% 
-  dplyr::select(NISP_counts, GBIF_family, DB_sieved, count) %>% 
-  filter(!GBIF_family == "NA") %>%
-  group_by(DB_sieved, count) %>%
+  dplyr::select(NISP_counts, GBIF_family, DB_sieved, count, Region) %>% 
+  dplyr::filter(!GBIF_family == "NA") %>%
+  dplyr::group_by(count, Region) %>%
+  dplyr::group_by(DB_sieved, count, Region) %>%
   summarize(NISP = sum(NISP_counts),
-            All = 655537,
+            All = 690892,
             prop = NISP/All)
+
+#Prop sieved by region
+df_species %>%
+  dplyr::select(NISP_counts, GBIF_family, DB_sieved, count, Region) %>%
+  dplyr::filter(!is.na(GBIF_family), GBIF_family != "NA") %>%
+  dplyr::group_by(DB_sieved, count, Region) %>%
+  dplyr::summarize(NISP = sum(NISP_counts, na.rm = TRUE), .groups = "drop_last") %>%
+  dplyr::group_by(Region) %>%
+  dplyr::mutate(
+    Region_total = sum(NISP),
+    prop = NISP / Region_total
+  ) %>%
+  ungroup()
 
 ###Taxa-level counts:
 df_species %>% 
@@ -154,22 +168,12 @@ df_species %>%
   summarize(NISP = sum(NISP_counts),
             Assemblages = length(unique(DB_Assemblage_ID)))
 
-df_species %>% 
-  select(time_bins, NISP_counts, GBIF_species,DB_Assemblage_ID) %>% 
-  filter(!GBIF_species == "NA") %>%
-  group_by(time_bins) %>%
-  summarize(NISP = sum(NISP_counts),
-            Assemblages = length(unique(DB_Assemblage_ID)))
-
-df_species %>% 
-  select(time_bins2, NISP_counts, GBIF_species,DB_Assemblage_ID) %>% 
-  filter(!GBIF_species == "NA") %>%
-  group_by(time_bins2) %>%
-  summarize(NISP = sum(NISP_counts),
-            Assemblages = length(unique(DB_Assemblage_ID)))
-
 df_species %>%
   group_by(Region) %>%
   distinct(DB_Assemblage_ID) %>%
   tally()
+
+#Plot Figure 1 ####
+
+
 
