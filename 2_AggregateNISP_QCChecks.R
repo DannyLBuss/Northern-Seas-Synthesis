@@ -14,64 +14,135 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-source("ThemePublish.R")
-source("~/Documents/2.Academic_Work/3.NSS/2.MANUSCRIPT_Jan2025/Code_final/MANUSCRIPT_functions.R")
+source("../ThemePublish.R")
+source("MANUSCRIPT_functions.R")
 
 #2. load data ####
-df<-read_xlsx("All_Data_with_Chronology_Aug2025.xlsx", col_names = TRUE, col_types = "text")
+#df<-read_xlsx("All_Data_with_Chronology_Sept2025.xlsx", col_names = TRUE, col_types = "text")
+df<-df_final
 names(df)<-gsub(" ","_",names(df))
 df<-df %>% dplyr::select(-any_of(c("Site_code","Year_reported")))
-#Remove those assemblages with a NISP of less than 1
-df<-df[!df$NISP < 0.99,]
+
+#df$Region<-dplyr::recode(df$Country,
+#                             "England" = 'Britain & Ireland',
+#                             "Scotland" = 'Britain & Ireland',
+#                             "Norway" = 'Scandinavia',
+#                             "Sweden" = 'Scandinavia',
+#                             "Denmark" = 'Scandinavia',
+#                             "Germany" = 'Western Europe',
+#                             "Belgium" = 'Western Europe',
+#                             "Netherlands" = 'Western Europe',
+#                             "Ireland" = 'Britain & Ireland',
+#                             "Estonia" = 'Poland & Estonia',
+#                             "Poland" = 'Poland & Estonia',
+#                             "Northern Ireland" = 'Britain & Ireland')
+#
+cols_to_fix<-c('Start_date_CE', 'End_date_CE',
+               'Decimal_Latitude','Decimal_Longitude', 
+               'ID_for_linked_rows_differing_only_by_recovery', 
+               'NISP','Trait_Temp_Max','Trait_Temp_Min', 'Trait_Temp_Fishbase_Median',
+               'Trait_Temp_Fishbase_Range','Trait_Temp_Fishbase_Env_Low','Trait_Temp_Fishbase_Env_High',
+               'Trait_Temp_Fishbase_Mid')
+df <- df %>%
+  dplyr::mutate(across(all_of(cols_to_fix), ~ as.numeric(gsub(",", ".", .x))))
+df$NISP<-df$NISP %>% as.numeric()
+
+df %>%
+  dplyr::group_by(region) %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(Lumped_NSS_IDs))
+
+df %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(Lumped_NSS_IDs))
+
+df %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(Lumped_NSS_IDs))
+
 #Convert georeferences to three decimal places
 df$Decimal_Latitude<-round(as.numeric(df$Decimal_Latitude),3)/1000
 df$Decimal_Longitude<-round(as.numeric(df$Decimal_Longitude),3)/1000
 
 #3. count number of assemblages ####
 df %>% 
-  summarise(UniqueCount = n_distinct(NSS_unique_ID))
+  summarise(UniqueCount = n_distinct(Lumped_NSS_IDs))
 
 # Count total NISP
 df$NISP %>% as.numeric() %>%
   sum(na.rm=T)
+
+df$NISP<-df$NISP %>% as.numeric()
 
 df_merge<-df
 
 df_merge$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 
-df_old_short<-df_merge %>% dplyr::select(DB_ID3, Number_of_unidentified_fish_specimens) %>% distinct()
+df_merge$Recovery<-df_merge$`Recovery_method_(hand-collected;_sieved;_both;_unknown)`
+
+df_merge$DB_ID3 <- with(
+  df_merge,
+  paste(
+    Settlement_modern_name, Site_name, Decimal_Latitude, Decimal_Longitude,
+    Country, Site_type_using_local_categories, Rural_urban_or_neither, Recovery, DB_sieved, Database, 
+    sep = ";"
+  )
+)
+
+#Unidentified specimens
+df_old_short<-df_merge %>% dplyr::select(Lumped_NSS_IDs, Number_of_unidentified_fish_specimens) %>% distinct()
 names(df_old_short)[2]<-"unidentified_fish_specimens"
 df_old_short$unidentified_fish_specimens<-as.character(df_old_short$unidentified_fish_specimens)
-df_old_short<-aggregate(unidentified_fish_specimens ~ DB_ID3, data = df_old_short, paste, collapse = ",")
+df_old_short<-aggregate(unidentified_fish_specimens ~ Lumped_NSS_IDs, data = df_old_short, paste, collapse = ",")
 df_merge<- df_merge %>% merge(df_old_short, all.x=T)
 
 #Totals
-df_old_short<-df_merge %>% dplyr::select(DB_ID3, Total_Fish_NISP) %>% distinct()
+df_old_short<-df_merge %>% dplyr::select(Lumped_NSS_IDs, Total_Fish_NISP) %>% distinct()
 names(df_old_short)[2]<-"Total_NISP"
 df_old_short$Total_NISP<-as.character(df_old_short$Total_NISP)
-df_old_short<-aggregate(Total_NISP ~ DB_ID3, data = df_old_short, paste, collapse = ",")
+df_old_short<-aggregate(Total_NISP ~ Lumped_NSS_IDs, data = df_old_short, paste, collapse = ",")
 df_merge<- df_merge %>% merge(df_old_short, all.x=T)
 
 #Local site types
-df_old_short<-df_merge %>% dplyr::select(DB_ID3, Site_type_using_local_categories) %>% distinct()
+df_old_short<-df_merge %>% dplyr::select(Lumped_NSS_IDs, Site_type_using_local_categories) %>% distinct()
 names(df_old_short)[2]<-"Local_site_type"
 df_old_short$Local_site_type<-as.character(df_old_short$Local_site_type)
-df_old_short<-aggregate(Local_site_type ~ DB_ID3, data = df_old_short, paste, collapse = ",")
+df_old_short<-aggregate(Local_site_type ~ Lumped_NSS_IDs, data = df_old_short, paste, collapse = ",")
+df_merge<- df_merge %>% merge(df_old_short, all.x=T)
+
+#Sieve_size_min
+df_old_short<-df_merge %>% dplyr::select(Lumped_NSS_IDs, Minimum_sieve_mesh_mm) %>% distinct()
+names(df_old_short)[2]<-"Minimum_sieve_mesh_mm"
+df_old_short$Minimum_sieve_mesh_mm<-as.character(df_old_short$Minimum_sieve_mesh_mm)
+df_old_short <- aggregate(Minimum_sieve_mesh_mm ~ Lumped_NSS_IDs, 
+                          data = df_old_short, 
+                          FUN = function(x) {
+                            c(pasted = paste(x, collapse = ","),
+                              minval = min(as.numeric(x)))
+                          })
+
+# Split the combined result into separate columns
+df_old_short$Minimum_sieve_mesh_mm_agg <- df_old_short$Minimum_sieve_mesh_mm[, "minval"]
+df_old_short$Minimum_sieve_mesh_mm <- df_old_short$Minimum_sieve_mesh_mm[, "pasted"]
 df_merge<- df_merge %>% merge(df_old_short, all.x=T)
 
 #Rural_urban_or_neither
-df_old_short<-df_merge %>% dplyr::select(DB_ID3, Rural_urban_or_neither) %>% distinct()
+df_old_short<-df_merge %>% dplyr::select(Lumped_NSS_IDs, Rural_urban_or_neither) %>% distinct()
 names(df_old_short)[2]<-"Rural_or_urban"
 df_old_short$Rural_or_urban<-as.character(df_old_short$Rural_or_urban)
-df_old_short<-aggregate(Rural_or_urban ~ DB_ID3, data = df_old_short, paste, collapse = ",")
+df_old_short<-aggregate(Rural_or_urban ~ Lumped_NSS_IDs, data = df_old_short, paste, collapse = ",")
 df_merge<- df_merge %>% merge(df_old_short, all.x=T)
 
 #5. Convert numeric variables to text for aggregations ####
 df_merge <-df_merge %>% mutate_at(c('Start_date_CE', 'End_date_CE',
                         'Decimal_Latitude','Decimal_Longitude', 
                         'ID_for_linked_rows_differing_only_by_recovery', 
-                        'NISP','Trait_Temp_Max','Trait_Temp_Min'), as.character)
+                        'NISP','Trait_Temp_Max','Trait_Temp_Min', 'Trait_Temp_Fishbase_Median',
+                        'Trait_Temp_Fishbase_Range','Trait_Temp_Fishbase_Env_Low','Trait_Temp_Fishbase_Env_High',
+                        'Trait_Temp_Fishbase_Mid'), as.character)
 #Remove special characters from column names
 names(df_merge)<-gsub(" ","_", names(df_merge))
 names(df_merge)<-gsub("\\(","", names(df_merge))
@@ -82,7 +153,7 @@ remove_cols<-c("DB_ID2","DB_ID4","Assemblage_ID","NSS_unique_ID","Input_by","ID_
                "File_name","Assemblage_or_sub-assemblage","County_province_or_state","Georef_source",
                "Context_types","ID_for_linked_rows_differing_only_by_recovery","Part_of_sieve_stack",
                "Recovery_method_hand-collected;_sieved;_both;_unknown","Sieve_sizes_and_recovery_details_with_original_mesh_units_if_not_mm",
-               "Minimum_sieve_mesh_mm","Maximum_sieve_mesh_mm","Lumped_by_phase_or_split_by_context",
+               "Maximum_sieve_mesh_mm","Lumped_by_phase_or_split_by_context",
                "Unpublished_zooarchaeology_reference_J_Arch_Sci_format","Published_zooarchaeology_reference_J_Arch_Sci_format",
                "Archaeological_reference_for_chronology_etc_not_in_zooarch_refs_J_Arch_Sci_format","Analyst_name",
                "Dataset_contact_name","IP_status","Skeletal_element_data_available_y_or_n","Measurement_or_fish_size_data_available_y_or_n",
@@ -91,154 +162,208 @@ remove_cols<-c("DB_ID2","DB_ID4","Assemblage_ID","NSS_unique_ID","Input_by","ID_
                "Sample_optional","Sediment_volumes_available_y_or_n_optional","Associated_mammal_NISP_available_y;_n;_not_matching_or_enter_value_if_easily_to_hand_optional",
                "Associated_bird_NISP_available_y;_n;_not_matching_or_enter_value_if_easily_to_hand_optional","Extra_column_for_dataset-specific_variable_optional"
                ,"Extra_column_for_dataset-specific_variable_optional","Definition_of_extra_column_variable_optional",
-               "Number_of_unidentified_fish_specimens","Total_Fish_NISP","Rural_urban_or_neither","Site_type_using_local_categories")
+               "Number_of_unidentified_fish_specimens","Total_Fish_NISP","Rural_urban_or_neither","Site_type_using_local_categories", "database","Original_name","Taxa_cleaned","Minimum_sieve_mesh",
+               "Data_quality","unidentified_fish_specimens","Total_NISP","Minimum_sieve_mesh_mm_agg")
+
+#Minimum_sieve_mesh_mm	Has_taxa	Trait_Temp_Fishbase_Median	Trait_Temp_Fishbase_Range	Trait_Temp_Fishbase_Source	Trait_Temp_Fishbase_Env_Low	Trait_Temp_Fishbase_Env_High	Trait_Temp_Fishbase_Mid	Trait_Temp_Fishbase_Source_Choice	minimum_sieve_size_num
 df_merge<-df_merge %>% dplyr::select(-any_of(remove_cols))
 
 df_merge$NISP %>% as.numeric() %>%
   sum(na.rm=T)
+length(unique(df_merge$Lumped_NSS_IDs))
 
-df_merge$NISP %>% as.numeric() %>%
-  sum(na.rm=T)
+####NISP BY DATA QUALITY ####
+df_merge %>%
+  dplyr::mutate(
+    quality = as.character(quality),
+    NISP = as.numeric(NISP)
+  ) %>%
+  dplyr::group_by(quality) %>%
+  dplyr::summarise(total_NISP = sum(NISP, na.rm = TRUE))
 
-df_out <- df_merge %>%
-  mutate(
-    start_date_CE = as.numeric(Start_date_CE),
-    end_date_CE   = as.numeric(End_date_CE),
-    minimum_sieve_size_num = readr::parse_number(Minimum_sieve_mesh)
-  ) %>%
-  group_by(
-    Settlement_modern_name, Site_name, Decimal_Latitude, Decimal_Longitude,
-    Country, Local_site_type, Rural_or_urban, Recovery, DB_sieved
-  ) %>%
-  mutate(
-    .grp_min_start = if (all(is.na(start_date_CE))) NA_real_ else min(start_date_CE, na.rm = TRUE),
-    .grp_max_end   = if (all(is.na(end_date_CE)))   NA_real_ else max(end_date_CE,   na.rm = TRUE),
-    .total_span = .grp_max_end - .grp_min_start,
-    .span_ok    = !is.na(.total_span) & .total_span < 351,
-    .overlap_start = if (all(is.na(start_date_CE))) NA_real_ else max(start_date_CE, na.rm = TRUE),
-    .overlap_end   = if (all(is.na(end_date_CE)))   NA_real_ else min(end_date_CE,   na.rm = TRUE),
-    .has_overlap   = !is.na(.overlap_start) & !is.na(.overlap_end) & (.overlap_start <= .overlap_end),
-    aggregate = .has_overlap & .span_ok,
-    min_sieve_size_group = if (all(is.na(minimum_sieve_size_num))) NA_real_
-    else min(minimum_sieve_size_num, na.rm = TRUE),
-    lowest_start_overlap = ifelse(aggregate, .overlap_start, NA_real_),
-    highest_end_overlap  = ifelse(aggregate, .overlap_end,   NA_real_),
-    .in_overlap = aggregate &
-      !is.na(start_date_CE) & !is.na(end_date_CE) &
-      (start_date_CE <= .overlap_end) & (end_date_CE >= .overlap_start)
-  ) %>%
-  mutate(
-    NSS_IDs_overlap = ifelse(
-      aggregate,
-      {
-        ids <- unique(na.omit(Lumped_NSS_IDs[.in_overlap]))
-        if (length(ids) == 0) NA_character_ else paste(ids, collapse = ";")
-      },
-      NA_character_
-    )
-  ) %>%
-  mutate(
-    start_date_CE_final_num = ifelse(aggregate, .grp_min_start, start_date_CE),
-    end_date_CE_final_num   = ifelse(aggregate, .grp_max_end,   end_date_CE),
-    min_sieve_size_final_num = ifelse(aggregate, min_sieve_size_group, minimum_sieve_size_num),
-    NSS_IDs_final = ifelse(
-      aggregate,
-      NSS_IDs_overlap,
-      as.character(Lumped_NSS_IDs)
-    )
-  ) %>%
-  dplyr::select(
-    Start_date_CE, End_date_CE, Minimum_sieve_mesh,
-    start_date_CE, end_date_CE, minimum_sieve_size_num,
-    dplyr::everything(),
-    start_date_CE_final_num, end_date_CE_final_num, min_sieve_size_final_num, NSS_IDs_final,
-    min_sieve_size_group, lowest_start_overlap, highest_end_overlap, aggregate
-  ) %>%
-  dplyr::select(
-    -dplyr::starts_with(".grp_"),
-    -.total_span, -.span_ok,
-    -dplyr::starts_with(".overlap"),
-    -.has_overlap, -.in_overlap
-  ) %>%
-  dplyr::ungroup()
+### QUALITY FILTER HERE ####
+df_merge<-df_merge[df_merge$quality==1,]
 
-remove<-c("DB_ID4","min_sieve_size_group","lowest_start_overlap","highest_end_overlap","NSS_IDs_overlap","DB_ID4_Group","DB_ID3","start_date_CE","end_date_CE","minimum_sieve_size_num")
-df_out<-df_out %>% dplyr::select(-any_of(remove))
-#Convert all columns except NISP to character
-df_out <- df_out %>%
-  mutate(across(-all_of("NISP"), as.character)) %>%
-  # Use one of the following lines for NISP:
-  mutate(NISP = as.numeric(NISP)) 
-names(df_out)
-# ---- Count TRUE/FALSE in aggregate ----
-table(df_out$aggregate)
-
-# Columns to form the identifier (deduped)
-id_cols <- unique(c(
+#set up aggregate function inputs ####
+collapse_mode <- "span_ok"
+group_keys <- c(
   "Settlement_modern_name","Site_name","Decimal_Latitude","Decimal_Longitude",
-  "Country","Local_site_type","Rural_or_urban","Recovery","DB_sieved",
-  "aggregate","start_date_CE_final_num","end_date_CE_final_num","min_sieve_size_final_num",
+  "Country","Local_site_type","Rural_or_urban","Recovery","DB_sieved","Database"
+)
+taxa_cols <- c(
   "GBIF_species","GBIF_genus","GBIF_family","GBIF_order",
   "GBIF_chrondrichthyes_superorder","GBIF_chondricthyes_infraclass","GBIF__chondricthyes_subclass",
-  "GBIF_class","GBIF_phylum","GBIF_kingdom","GBIF_level","NSS_IDs_final"
-))
+  "GBIF_class","GBIF_phylum","GBIF_kingdom","GBIF_level","Trait_Habitat","Trait_LifeHistory","Trait_endangered","Trait_Temp_Max",
+  "Trait_Temp_Min","Known_Major_Trade_J_Barrett","Known_Aquaculture_R_Hoffmann","Trait_Temp_Fishbase_Median","Trait_Temp_Fishbase_Range",
+  "Trait_Temp_Fishbase_Source","Trait_Temp_Fishbase_Env_Low","Trait_Temp_Fishbase_Env_High","Trait_Temp_Fishbase_Mid","Trait_Temp_Fishbase_Source_Choice"
+)
 
-# 1) Build a stable identifier (without altering originals)
-id_tmp <- df_out %>%
-  transmute(across(all_of(id_cols), to_chr)) %>%
-  mutate(across(everything(), ~ ifelse(is.na(.), "(NA)", .))) %>%
-  unite("identifier", all_of(id_cols), sep = ";", remove = TRUE)
+# keep only keys that exist (prevents 'columns do not exist' errors)
+group_keys <- intersect(group_keys, names(df_merge))
+taxa_cols  <- intersect(taxa_cols,  names(df_merge))
 
-df_with_id <- df_out %>%
-  dplyr::mutate(identifier = id_tmp$identifier)
-
-# Column order for the final output: identifier + NISP + all original columns
-final_cols <- c("identifier", "NISP", names(df_out))
-
-# 2) Aggregate ONLY rows where aggregate == TRUE
-df_agg <- df_with_id %>%
-  dplyr::filter(aggregate == TRUE) %>%
-  dplyr::group_by(identifier) %>%
-  dplyr::summarise(
-    # Sum NISP (robust to any stray text like "12 pcs")
-    NISP = sum(readr::parse_number(as.character(NISP)), na.rm = TRUE),
-    # Paste ALL other columns as strings so nothing is dropped
-    dplyr::across(
-      .cols = setdiff(names(df_with_id), c("identifier", "NISP")),
-      .fns  = collapse_col,
-      .names = "{.col}"
+#aggregate chron overlaps
+df_out <- df_merge %>%
+  dplyr::mutate(
+    .start_num = readr::parse_double(base::as.character(Start_date_CE)),
+    .end_num   = readr::parse_double(base::as.character(End_date_CE)),
+    minimum_sieve_size_num = readr::parse_number(Minimum_sieve_mesh_mm),
+    NISP_num = readr::parse_double(base::as.character(NISP))
+  ) %>%
+  dplyr::group_by(dplyr::across(dplyr::all_of(group_keys))) %>%
+  dplyr::mutate(
+    .g_min_start = { x <- .start_num[!base::is.na(.start_num)]; if (base::length(x)) base::min(x) else NA_real_ },
+    .g_max_end   = { x <- .end_num[!base::is.na(.end_num)];     if (base::length(x)) base::max(x) else NA_real_ },
+    .g_max_start = { x <- .start_num[!base::is.na(.start_num)]; if (base::length(x)) base::max(x) else NA_real_ },
+    .g_min_end   = { x <- .end_num[!base::is.na(.end_num)];     if (base::length(x)) base::min(x) else NA_real_ },
+    .total_span  = .g_max_end - .g_min_start,
+    .span_ok     = !base::is.na(.total_span) & .total_span <= 150,
+    .overlap_start = .g_max_start,
+    .overlap_end   = .g_min_end,
+    .has_overlap   = !base::is.na(.overlap_start) & !base::is.na(.overlap_end) &
+      (.overlap_start <= .overlap_end),
+    aggregate = .has_overlap & .span_ok,
+    collapse_group = dplyr::case_when(
+      collapse_mode == "overlap" ~ (.has_overlap & .span_ok),
+      collapse_mode == "span_ok" ~ (.span_ok),
+      collapse_mode == "always"  ~ TRUE,
+      TRUE                       ~ FALSE
     ),
+    .in_overlap = (.has_overlap) &
+      !base::is.na(.start_num) & !base::is.na(.end_num) &
+      (.start_num <= .overlap_end) & (.end_num >= .overlap_start)
+  ) %>%
+  dplyr::mutate(
+    NSS_IDs_overlap = dplyr::if_else(
+      .has_overlap,
+      {
+        ids <- base::unique(stats::na.omit(Lumped_NSS_IDs[.in_overlap]))
+        if (base::length(ids)) base::paste(ids, collapse = ";") else NA_character_
+      },
+      NA_character_
+    ),
+    NSS_IDs_group_all = {
+      ids <- base::unique(stats::na.omit(Lumped_NSS_IDs))
+      if (base::length(ids)) base::paste(ids, collapse = ";") else NA_character_
+    }
+  ) %>%
+  dplyr::mutate(
+    start_date_CE_final_num  = dplyr::if_else(aggregate, .g_min_start, .start_num),
+    end_date_CE_final_num    = dplyr::if_else(aggregate, .g_max_end,   .end_num),
+    min_sieve_size_final_num = dplyr::if_else(collapse_group,
+                                              { x <- minimum_sieve_size_num[!base::is.na(minimum_sieve_size_num)];
+                                              if (base::length(x)) base::min(x) else NA_real_ },
+                                              minimum_sieve_size_num),
+    NSS_IDs_final = dplyr::if_else(.has_overlap, NSS_IDs_overlap, NSS_IDs_group_all)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    -dplyr::starts_with(".g_"),
+    -.total_span, -.span_ok,
+    -dplyr::starts_with(".overlap"),
+    -.has_overlap, -.in_overlap,
+    -NSS_IDs_group_all,
+    -.start_num, -.end_num
+  )
+
+group_keys <- intersect(group_keys, names(df_merge))
+taxa_cols  <- intersect(taxa_cols,  names(df_merge))
+
+remove <- c(
+  "DB_ID4","lowest_start_overlap","highest_end_overlap",
+  "DB_ID4_Group","DB_ID3","start_date_CE","end_date_CE"
+)
+remove <- intersect(remove, names(df_out))
+
+group_keys <- intersect(group_keys, names(df_out))
+taxa_cols  <- intersect(taxa_cols,  names(df_out))
+
+df_base <- df_out %>%
+  dplyr::select(-dplyr::any_of(remove)) %>%
+  dplyr::mutate(
+    NISP_num = ifelse(is.na(NISP_num),
+                      readr::parse_double(as.character(NISP)),
+                      NISP_num)
+  ) %>%
+  dplyr::distinct()
+
+gt_keys <- c(group_keys, taxa_cols)
+gt_keys <- intersect(gt_keys, names(df_base))
+
+total_by_gt <- df_base %>%
+  dplyr::group_by(dplyr::across(dplyr::all_of(gt_keys))) %>%
+  dplyr::summarise(
+    Total_NISP_num = if (all(is.na(NISP_num))) NA_real_ else sum(NISP_num, na.rm = TRUE),
     .groups = "drop"
   ) %>%
-  # make sure columns are in the same order as requested
-  dplyr::select(dplyr::all_of(final_cols))
+  dplyr::mutate(Total_NISP = dplyr::if_else(is.na(Total_NISP_num), NA_character_, as.character(Total_NISP_num))) %>%
+  dplyr::select(-Total_NISP_num)
 
-# 3) Keep NON-aggregating rows as rows (no grouping), but cast non-NISP to character for consistency
-df_nonagg <- df_with_id %>%
-  dplyr::filter(is.na(aggregate) | aggregate == FALSE) %>%
-  dplyr::mutate(
-    NISP = readr::parse_number(as.character(NISP)),
-    dplyr::across(.cols = setdiff(names(.), c("identifier","NISP")), .fns = to_chr)
+id_cols <- unique(c(
+  group_keys, taxa_cols,
+  "start_date_CE_final_num","end_date_CE_final_num","min_sieve_size_final_num","NSS_IDs_final"
+))
+id_cols <- intersect(id_cols, names(df_base))
+
+collapsed <- df_base %>%
+  dplyr::filter(aggregate %in% TRUE & collapse_group %in% TRUE) %>%
+  dplyr::group_by(dplyr::across(dplyr::all_of(id_cols))) %>%
+  dplyr::summarise(
+    NISP_num = if (all(is.na(NISP_num))) NA_real_ else sum(NISP_num, na.rm = TRUE),
+    .groups  = "drop"
   ) %>%
-  dplyr::select(dplyr::all_of(final_cols))
+  dplyr::left_join(total_by_gt, by = gt_keys) %>%
+  dplyr::mutate(
+    aggregate      = TRUE,
+    collapse_group = TRUE
+  ) %>%
+  dplyr::rename(
+    NISP            = NISP_num,
+    Lumped_NSS_IDs  = NSS_IDs_final
+  )
 
-# 4) Combine
-df_result <- bind_rows(df_agg, df_nonagg)
+not_collapsed <- df_base %>%
+  dplyr::filter(!(aggregate %in% TRUE & collapse_group %in% TRUE)) %>%
+  dplyr::mutate(Total_NISP = NA_character_) %>% mutate(NISP = as.numeric(NISP))
 
-# df_result now has:
-# 1. one row per aggregated identifier for aggregate==TRUE groups (NISP summed, others pasted),
-# 2. original rows for aggregate==FALSE/NA,
-# 3. all original columns preserved or lumped if differences in ro, plus 'identifier'.
-df_result$NISP %>% as.numeric() %>%
+#Final dataframe following new chron overlapped aggregations
+df_result <- dplyr::bind_rows(collapsed, not_collapsed)
+
+not_collapsed$NISP %>% as.numeric() %>%
   sum(na.rm=T)
+
+length(unique(not_collapsed$Lumped_NSS_IDs))
+
+collapsed$NISP %>% as.numeric() %>%
+  sum(na.rm=T)
+
+length(unique(collapsed$Lumped_NSS_IDs))
+
+#Recalculate total NISP
+df_result <- dplyr::relocate(df_result, NISP, Total_NISP, .after = NISP)
 
 df_result$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 
 length(unique(df_result$Lumped_NSS_IDs))
 
-# 8. Assemblages that are chronological outliers ####
-df_result<-df_result[df_result$start_date_CE_final_num |> as.numeric() >= 1,]
+df <- df %>%
+  dplyr::group_by(Lumped_NSS_IDs) %>%
+  dplyr::filter(sum(NISP, na.rm = TRUE) >= 1) %>%
+  ungroup()
+
+id_cols <- unique(c(
+  "Settlement_modern_name","Site_name","Decimal_Latitude","Decimal_Longitude",
+  "Country","Local_site_type","Rural_or_urban","Recovery","DB_sieved",
+  "aggregate","start_date_CE_final_num","end_date_CE_final_num","min_sieve_size_final_num",
+  "GBIF_species","GBIF_genus","GBIF_family","GBIF_order",
+  "GBIF_chrondrichthyes_superorder","GBIF_chondricthyes_infraclass","GBIF__chondricthyes_subclass",
+  "GBIF_class","GBIF_phylum","GBIF_kingdom","GBIF_level","Trait_Habitat","Trait_LifeHistory","Trait_endangered","Trait_Temp_Max",
+  "Trait_Temp_Min","Known_Major_Trade_J_Barrett","Known_Aquaculture_R_Hoffmann", "NSS_IDs_final","DB_Assemblage_ID"
+))
+
+# Remove assemblages that are chronological outliers ####
+df_result<-df_result[df_result$start_date_CE_final_num |> as.numeric() >= -1,]
 df_result<-df_result[df_result$start_date_CE_final_num |> as.numeric() <= 1850,]
 df_result<-df_result[df_result$end_date_CE_final_num |> as.numeric() <= 1900,]
 ggplot(df_result, aes(as.numeric(start_date_CE_final_num))) +
@@ -261,8 +386,8 @@ df_result$NISP %>% as.numeric() %>%
 
 length(unique(df_result$Lumped_NSS_IDs))
 
-#N=2109
-#NISP=1805727
+#N=2083
+#NISP=1802193
 
 # Remove assemblages with low or v. high fish counts ####
 #Recalculate total fish NISP
@@ -286,24 +411,15 @@ df_summed <- df_result %>%
   dplyr::mutate(NISP_total = sum(NISP, na.rm = TRUE)) %>%
   ungroup()
 
-#Remove small and large assemblages ####
-df_tmp<-df_summed %>% dplyr::filter(NISP_total < quantile(df_summed$NISP_total, 0.975, na.rm=T))
-df_tmp<-df_tmp %>% dplyr::filter(NISP_total > quantile(df_tmp$NISP_total, 0.025, na.rm=T))
-df_tmp$NISP %>% as.numeric() %>%
-  sum(na.rm=T)
-length(unique(df_tmp$Lumped_NSS_IDs))
-#N=1751
-#NISP=1308730
-
-# Remove assemblages with chronological range of more than 400
-df_tmp<- df_tmp %>%
-  filter((end_date_CE_final_num |> as.numeric() - start_date_CE_final_num |> as.numeric()) <= 300) %>%
+# Remove assemblages with chronological range of more than 300
+df_tmp<- df_summed %>%
+  filter((end_date_CE_final_num |> as.numeric() - start_date_CE_final_num |> as.numeric()) <= 350) %>%
   filter(complete.cases(Decimal_Longitude, Decimal_Latitude))
 df_tmp$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 length(unique(df_tmp$Lumped_NSS_IDs))
-#N=1370
-#NISP=1010617
+#N=1536
+#NISP=1378018
 
 df_tmp$region<-dplyr::recode(df_tmp$Country,
                           "England" = 'Britain & Ireland',
@@ -327,30 +443,51 @@ df_tmp %>%
     .groups = "drop"
   )
 
+df_tmp %>%
+  dplyr::group_by(region) %>%
+  dplyr::filter(region=="Britain & Ireland",
+                !GBIF_species=="NA",
+                !is.na(GBIF_species)) %>%
+  dplyr::summarise(
+    Total_NISP       = sum(NISP, na.rm = TRUE),
+    Assemblage_count = dplyr::n_distinct(Lumped_NSS_IDs),
+    .groups = "drop"
+  )
+
+df_tmp %>%
+  dplyr::group_by(region) %>%
+  dplyr::filter(region=="Western Europe",
+                !GBIF_species=="NA",
+                !is.na(GBIF_species)) %>%
+  dplyr::summarise(
+    Total_NISP       = sum(NISP, na.rm = TRUE),
+    Assemblage_count = dplyr::n_distinct(Lumped_NSS_IDs),
+    .groups = "drop"
+  )
+
+df_tmp %>%
+  dplyr::group_by(region) %>%
+  dplyr::filter(region=="Scandinavia",
+                !GBIF_species=="NA",
+                !is.na(GBIF_species)) %>%
+  dplyr::summarise(
+    Total_NISP       = sum(NISP, na.rm = TRUE),
+    Assemblage_count = dplyr::n_distinct(Lumped_NSS_IDs),
+    .groups = "drop"
+  )
+
 df_tmp %>% 
   summarise(
     Total_NISP = sum(NISP, na.rm=TRUE),
     Assemblage_count = n_distinct(Lumped_NSS_IDs)
   )
 
-###Subset to species level data
-df_tmp<-df_tmp %>% filter(
-  !is.na(GBIF_species)
-)
-
-df_tmp<-df_tmp %>% filter(
-  !GBIF_species == "NA"
-)
-
-#Remove these columns
-rm_cols<-c("Original_name","Has_taxa","GBIF_level")
-df_tmp<-df_tmp %>% dplyr::select(-all_of(rm_cols))
-
 df_tmp$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 length(unique(df_tmp$Lumped_NSS_IDs))
-#N=1364
-#NISP=691,514
+
+#N=1521
+#NISP=1,378,018
 
 ###Add regions, temperature and time midpoints, and timebins
 df_species<-df_tmp
@@ -362,66 +499,155 @@ df_species$time_bins<-factor(cut(as.numeric(df_species$Time.mid), breaks=c(-800,
 df_species$time_bins2<-factor(cut(as.numeric(df_species$Time.mid), breaks=c(-800,501,701,901,1101,1301,1501,1701,2200), 
                                   labels=c("<500","500-700","700-900","900-1100","1100-1300","1300-1500","1500-1700",">1700"),
                                   levels=c("<500","500-700","700-900","900-1100","1100-1300","1300-1500","1500-1700",">1700")))
-df_species$region<-recode(df_species$Country,
-                          "England" = 'Britian & Ireland',
-                          "Scotland" = 'Britian & Ireland',
-                          "Norway" = 'Scandinavia',
-                          "Sweden" = 'Scandinavia',
-                          "Denmark" = 'Scandinavia',
-                          "Germany" = 'Western Europe',
-                          "Belgium" = 'Western Europe',
-                          "Netherlands" = 'Western Europe',
-                          "Ireland" = 'Britian & Ireland',
-                          "Estonia" = 'Poland & Estonia',
-                          "Poland" = 'Poland & Estonia',
-                          "Northern Ireland" = 'Britian & Ireland')
+
+names(df_species)
+remove <- c(
+  "aggregate","collapse_group","quality",
+  "Assemblage_date_as_locally_defined","Start_date_CE","End_date_CE",
+  "Unpublished_zooarchaeology_reference","Published_zooarchaeology_reference",
+  "Archaeological_reference_for_chronology_etc_not_in_zooarch_refs","database","Taxa_cleaned",
+  "Minimum_sieve_mesh","Data_quality","unidentified_fish_specimens","NISP_num","NSS_IDs_overlap","NSS_IDs_final",
+  "NISP_total"
+)
+df_species<-df_species %>% dplyr::select(-any_of(remove))
+
 # Add Cities Data ####
-df_cities<-read_xlsx("../../SupplementaryFiles/Supplementary_Danny's_Towns_Jan2025.xlsx")
+df_cities<-read_xlsx("../../../SupplementaryFiles/Supplementary_Danny's_Towns_Jan2025.xlsx")
 names(df_cities)[4]<-"Country"
-df_new_with_cities<-df_species%>% left_join(df_cities)
-df_new_with_cities$Time_range<-as.numeric(df_new_with_cities$End_date_CE) - as.numeric(df_new_with_cities$Start_date_CE)
+df_new_with_cities<-df_species%>% left_join(df_cities, by=c("Settlement_modern_name", "Country"), relationship="many-to-many")
+df_new_with_cities$Time_range<-as.numeric(df_new_with_cities$end_date_CE_final_num) - as.numeric(df_new_with_cities$start_date_CE_final_num)
 #Counts
 df_new_with_cities$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 length(unique(df_new_with_cities$Lumped_NSS_IDs))
 
 #Rename columns
-names(df_new_with_cities)<-gsub("DB_ID3","DB_Assemblage_ID",names(df_new_with_cities))
+names(df_new_with_cities)<-gsub("Lumped_NSS_IDs","DB_Assemblage_ID",names(df_new_with_cities))
 names(df_new_with_cities)<-gsub("region","Region",names(df_new_with_cities))
 names(df_new_with_cities)<-gsub("Rural_or_urban","Rural_urban_or_neither",names(df_new_with_cities))
 df_new_with_cities<-df_new_with_cities %>% dplyr::select(-`Original Spelling (Danny's table)`)
+df_new_with_cities<-df_new_with_cities %>% dplyr::select(-Total_NISP)
+
+df_new_with_cities <- df_new_with_cities %>%
+  mutate(
+    Time.mid = dplyr::if_else(
+      !is.na(start_date_CE_final_num) & !is.na(end_date_CE_final_num),
+      (start_date_CE_final_num + end_date_CE_final_num) / 2,
+      as.numeric(NA)
+    ),
+    Time.range = dplyr::if_else(
+      !is.na(start_date_CE_final_num) & !is.na(end_date_CE_final_num),
+      end_date_CE_final_num - start_date_CE_final_num,
+      as.numeric(NA)
+    )
+  )
+
+df_new_with_cities <- df_new_with_cities %>%
+  dplyr::group_by(DB_Assemblage_ID) %>%
+  dplyr::mutate(NISP_total = sum(as.numeric(NISP), na.rm = TRUE)) %>%
+  ungroup()
 
 df_new_with_cities %>% 
-  group_by(Region) %>%
-  summarise(
+  dplyr::group_by(Region) %>%
+  dplyr::summarise(
     Total_NISP = sum(NISP, na.rm=TRUE),
-    Assemblage_count = n_distinct(Lumped_NSS_IDs)
+    Assemblage_count = n_distinct(DB_Assemblage_ID)
   )
 #Export species-level dataset for sesnsitivty analysis - with PE ####
 write_xlsx(df_new_with_cities, "NSS_SpeciesData_Aug2025_withPE.xlsx", col_names = TRUE, format_headers = TRUE)
 
 df_new_with_cities_b<-df_new_with_cities[!df_new_with_cities$Region=="Poland & Estonia",]
-df_new_with_cities_b$NISP %>% as.numeric() %>%
-  sum(na.rm=T)
-length(unique(df_new_with_cities_b$Lumped_NSS_IDs))
 
 df_new_with_cities_b %>% 
-  group_by(Region) %>%
-  summarise(
+  dplyr::group_by(Region) %>%
+  dplyr::summarise(
     Total_NISP = sum(NISP, na.rm=TRUE),
-    Assemblage_count = n_distinct(Lumped_NSS_IDs)
-  )
-
-df_new_with_cities_b %>% 
-  summarise(
-    Total_NISP = sum(NISP, na.rm=TRUE),
-    Assemblage_count = n_distinct(Lumped_NSS_IDs)
+    Assemblage_count = n_distinct(DB_Assemblage_ID)
   )
 
 df_new_with_cities_b %>% 
   dplyr::filter(!GBIF_species == "NA") %>%
-  dplyr::summarize(NISP = sum(NISP))
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
+df_new_with_cities_b <- df_new_with_cities_b %>%
+  dplyr::mutate(NISP = as.numeric(NISP)) %>%
+  dplyr::group_by(DB_Assemblage_ID) %>%
+  dplyr::mutate(total_NISP = sum(NISP, na.rm = TRUE)) %>%
+  ungroup()
+
+rm_cols<-c("Time.range","NISP_total")
+df_new_with_cities_b<-df_new_with_cities_b %>% dplyr::select(-all_of(rm_cols))
+
+#Remove small and large assemblages ####
+df_new_with_cities_b %>%
+  dplyr::group_by(Region) %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
+# 1) totals per assemblage (one row per DB_Assemblage_ID)
+
+assemblage_tmp <- df_new_with_cities_b %>%
+  dplyr::group_by(DB_Assemblage_ID) %>%
+  dplyr::summarise(total_NISP_assemblage = sum(NISP, na.rm = TRUE), .groups = "drop")
+
+qs <- stats::quantile(assemblage_tmp$total_NISP_assemblage, c(0.01, 0.99), na.rm = TRUE)
+
+ids <- assemblage_tmp %>%
+  dplyr::filter(total_NISP_assemblage < qs[2]) %>%
+  dplyr::pull(DB_Assemblage_ID)
+
+df_new_with_cities_b <- df_new_with_cities_b %>%
+  dplyr::filter(DB_Assemblage_ID %in% ids)
+
+df_new_with_cities_b %>%
+  dplyr::group_by(Region) %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
+rm(assemblage_tmp)
 
 #Export species-level dataset for analysis - without PE ####
-write_xlsx(df_new_with_cities_b, "NSS_SpeciesData_Aug2025_noPE.xlsx", col_names = TRUE, format_headers = TRUE)
+write_xlsx(df_new_with_cities_b, "NSS_SpeciesData_Sept2025_noPE.xlsx", col_names = TRUE, format_headers = TRUE)
+
+#all good quality data
+df_new_with_cities_b %>% 
+  dplyr::summarise(
+    Total_NISP = sum(NISP, na.rm=TRUE),
+    Assemblage_count = n_distinct(DB_Assemblage_ID)
+  )
+
+#NISP = 860,520
+#N = 1292
+
+#species level only
+df_new_with_cities_b %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+#NISP = 625,072
+#N = 1445
+
+#species level only (Assemblages < 5 NISP removed)
+df_supp<-df_new_with_cities_b %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
+df_supp<-df_new_with_cities_b %>%
+  dplyr::group_by(DB_Assemblage_ID) %>%
+  dplyr::mutate(NISP_total = sum(NISP, na.rm = TRUE)) %>%  # sum per ID
+  dplyr::filter(!NISP_total < 5,
+                !GBIF_species == "NA") %>%                           
+  ungroup()
+
+df_supp %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
+#NISP = 624,799
+#N = 1309
 
