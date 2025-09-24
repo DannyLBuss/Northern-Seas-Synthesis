@@ -311,7 +311,7 @@ Sweden$`Total Fish NISP` %>% as.numeric() %>%
 Sweden$`NSS unique ID`<-stringr::str_replace(Sweden$`NSS unique ID`,"\\.0","")
 
 # Load Data for Taxonomic Harmonisation ####
-META<-read_xlsx("DF_Fish_Traits.xlsx", col_names = TRUE)
+META<-readxl::read_xlsx("S4_Taxon_Traits_Table.xlsx", col_names = TRUE)
 str(META)
 taxa_meta<-META
 taxa_meta<-taxa_meta %>%
@@ -382,6 +382,10 @@ Belgium_Taxa<-Belgium_Taxa[!is.na(Belgium_Taxa$NISP),]
 Belgium_Taxa$database<-"Belgium_VoR_14Aug2025"
 Belgium_Meta<-Belgium_Meta %>%
   dplyr::mutate_all(as.character)
+Belgium_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Belgium_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Denmark)[47:ncol(Denmark)])
 Denmark[47:ncol(Denmark)] <- sapply(Denmark[47:ncol(Denmark)],as.numeric)
@@ -397,6 +401,10 @@ Denmark_Taxa$database<-"Denmark_VoR_14Aug2025"
 Denmark_Meta<-Denmark_Meta %>%
   dplyr::mutate_all(as.character)
 names(Denmark_Meta)<-names(Belgium_Meta)
+Denmark_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Denmark_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((England)[47:ncol(England)])
 England[47:ncol(England)] <- sapply(England[47:ncol(England)],as.numeric)
@@ -412,6 +420,10 @@ England_Taxa$database<-"England_VoR_14Aug2025"
 England_Meta<-England_Meta %>%
   dplyr::mutate_all(as.character)
 names(England_Meta)<-names(Belgium_Meta)
+England_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+England_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Estonia)[47:ncol(Estonia)])
 Estonia[47:ncol(Estonia)] <- sapply(Estonia[47:ncol(Estonia)],as.numeric)
@@ -427,6 +439,10 @@ Estonia_Taxa$database<-"Estonia_VoR_13Aug2025"
 Estonia_Meta<-Estonia_Meta %>%
   dplyr::mutate_all(as.character)
 names(Estonia_Meta)<-names(Belgium_Meta)
+Estonia_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Estonia_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Germany_Hein)[47:ncol(Germany_Hein)])
 Germany_Hein[47:ncol(Germany_Hein)] <- sapply(Germany_Hein[47:ncol(Germany_Hein)],as.numeric)
@@ -442,6 +458,10 @@ Germany_Hein_Taxa$database<-"Germany_Hein_VoR_14Aug2025"
 Germany_Hein_Meta<-Germany_Hein_Meta %>%
   dplyr::mutate_all(as.character)
 names(Germany_Hein_Meta)<-names(Belgium_Meta)
+Germany_Hein_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Germany_Hein_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Germany_Hol)[47:ncol(Germany_Hol)])
 Germany_Hol[47:ncol(Germany_Hol)] <- sapply(Germany_Hol[47:ncol(Germany_Hol)],as.numeric)
@@ -457,6 +477,10 @@ Germany_Hol_Taxa$database<-"Germany_Hol_VoR_14Aug2025"
 Germany_Hol_Meta<-Germany_Hol_Meta %>%
   dplyr::mutate_all(as.character)
 names(Germany_Hol_Meta)<-names(Belgium_Meta)
+Germany_Hol_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Germany_Hol_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Netherlands_Rom)[47:ncol(Netherlands_Rom)])
 Netherlands_Rom[47:ncol(Netherlands_Rom)] <- sapply(Netherlands_Rom[47:ncol(Netherlands_Rom)],as.numeric)
@@ -472,6 +496,10 @@ Netherlands_Rom_Taxa$database<-"Netherlands_Rom_VoR_14Aug2025"
 Netherlands_Rom_Meta<-Netherlands_Rom_Meta %>%
   dplyr::mutate_all(as.character)
 names(Netherlands_Rom_Meta)<-names(Belgium_Meta)
+Netherlands_Rom_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Netherlands_Rom_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Netherlands_RomSup)[47:ncol(Netherlands_RomSup)])
 Netherlands_RomSup[47:ncol(Netherlands_RomSup)] <- sapply(Netherlands_RomSup[47:ncol(Netherlands_RomSup)],as.numeric)
@@ -487,6 +515,10 @@ Netherlands_RomSup_Taxa$database<-"Netherlands_RomSup_VoR_14Aug2025"
 Netherlands_RomSup_Meta<-Netherlands_RomSup_Meta %>%
   dplyr::mutate_all(as.character)
 names(Netherlands_RomSup_Meta)<-names(Belgium_Meta)
+Netherlands_RomSup_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Netherlands_RomSup_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Norway)[47:ncol(Norway)])
 Norway[47:ncol(Norway)] <- sapply(Norway[47:ncol(Norway)],as.numeric)
@@ -502,6 +534,10 @@ Norway_Taxa$database<-"Norway_VoR_13Aug2025"
 Norway_Meta<-Norway_Meta %>%
   dplyr::mutate_all(as.character)
 names(Norway_Meta)<-names(Belgium_Meta)
+Norway_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Norway_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Ireland)[47:ncol(Ireland)])
 Ireland[47:ncol(Ireland)] <- sapply(Ireland[47:ncol(Ireland)],as.numeric)
@@ -517,6 +553,10 @@ Ireland_Taxa$database<-"Ireland_VoR_14Aug2025"
 Ireland_Meta<-Ireland_Meta %>%
   dplyr::mutate_all(as.character)
 names(Ireland_Meta)<-names(Belgium_Meta)
+Ireland_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Ireland_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Poland)[47:ncol(Poland)])
 Poland[47:ncol(Poland)] <- sapply(Poland[47:ncol(Poland)],as.numeric)
@@ -532,6 +572,10 @@ Poland_Taxa$database<-"Poland_VoR_14Aug2025"
 Poland_Meta<-Poland_Meta %>%
   dplyr::mutate_all(as.character)
 names(Poland_Meta)<-names(Belgium_Meta)
+Poland_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Poland_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Scotland)[47:ncol(Scotland)])
 Scotland[47:ncol(Scotland)] <- sapply(Scotland[47:ncol(Scotland)],as.numeric)
@@ -548,6 +592,10 @@ Scotland_Taxa$database<-"Scotland_VoR_14Aug2025"
 Scotland_Meta<-Scotland_Meta %>%
   dplyr::mutate_all(as.character)
 names(Scotland_Meta)<-names(Belgium_Meta)
+Scotland_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Scotland_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Scotland_b)[47:ncol(Scotland_b)])
 Scotland_b[47:ncol(Scotland_b)] <- sapply(Scotland_b[47:ncol(Scotland_b)],as.numeric)
@@ -564,6 +612,10 @@ Scotland_b_Taxa$database<-"Scotland_suppl_VoR_14Aug2025"
 Scotland_b_Meta<-Scotland_b_Meta %>%
   dplyr::mutate_all(as.character)
 names(Scotland_b_Meta)<-names(Belgium_Meta)
+Scotland_b_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Scotland_b_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 str((Sweden)[47:ncol(Sweden)])
 Sweden[47:ncol(Sweden)] <- sapply(Sweden[47:ncol(Sweden)],as.numeric)
@@ -579,6 +631,10 @@ Sweden_Taxa$database<-"Sweden_VoR_13Aug2025"
 Sweden_Meta<-Sweden_Meta %>%
   dplyr::mutate_all(as.character)
 names(Sweden_Meta)<-names(Belgium_Meta)
+Sweden_Meta %>%
+  dplyr::summarize(Assemblage_count = n_distinct(`NSS unique ID`))
+Sweden_Taxa %>%
+  dplyr::summarise(total_nisp = sum(NISP))
 
 df_Meta<-dplyr::bind_rows(list(Belgium_Meta, Denmark_Meta, 
                         England_Meta, 
@@ -604,7 +660,18 @@ df_NISP<-dplyr::bind_rows(list(Belgium_Taxa, Denmark_Taxa,
                         Norway_Taxa, Poland_Taxa, 
                         Scotland_Taxa, Scotland_b_Taxa, 
                         Sweden_Taxa))
-
+sum(as.numeric(c(Belgium_Taxa$NISP,
+                 Denmark_Taxa$NISP,
+                 England_Taxa$NISP, 
+                 Estonia_Taxa$NISP, 
+                 Germany_Hein_Taxa$NISP,
+                 Germany_Hol_Taxa$NISP, 
+                 Ireland_Taxa$NISP, 
+                 Netherlands_Rom_Taxa$NISP,
+                 Netherlands_RomSup_Taxa$NISP,
+                 Norway_Taxa$NISP, Poland_Taxa$NISP, 
+                 Scotland_Taxa$NISP, Scotland_b_Taxa$NISP, 
+                 Sweden_Taxa$NISP)), na.rm=T)
 str(df_NISP)
 df_NISP$`NSS unique ID`<-as.character(df_NISP$`NSS unique ID`)
 x<-df_NISP %>% dplyr::group_by(`NSS unique ID`, NISP) %>% dplyr::summarise(NISP_all = sum(NISP))
@@ -650,6 +717,30 @@ df_NISP %>%
     Taxa = n_distinct(`Original_name`)
   )
 
+df_NISP %>%
+  dplyr::summarise(
+    total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+    Assemblage_count = n_distinct(`NSS unique ID`),
+    Taxa = n_distinct(`Original_name`)
+  )
+
+df_NISP_new %>%
+  dplyr::group_by(database) %>%
+  dplyr::summarise(
+    species_count = n_distinct(`GBIF_species`),
+    genera_count = n_distinct(`GBIF_genus`),
+    family_count = n_distinct(`GBIF_family`),
+    order_count = n_distinct(`GBIF_order`),
+    order_count = n_distinct(`GBIF_class`)
+  )
+
+df_NISP_new %>%
+  dplyr::group_by(database) %>%
+  dplyr::summarise(
+    Assemblage_count = n_distinct(`NSS unique ID`),
+    Taxa = n_distinct(`Taxa_cleaned`)
+  )
+
 saveRDS(c(df_NISP, df_Meta), file = "NSS_longformat_Aug2025.R")
 write_xlsx(df_Meta, "NSS_metadata_Aug2025.xlsx", col_names = TRUE, format_headers = TRUE)
 write_xlsx(df_NISP, "NSS_NISPData_Aug2025.xlsx", col_names = TRUE, format_headers = TRUE)
@@ -658,15 +749,17 @@ df_all<-df_Meta %>% left_join(df_NISP)
 df_all<-df_all %>%
   dplyr::mutate_all(as.character)
 sum(as.numeric(df_all$NISP), na.rm=T)
+sum(as.numeric(df_NISP$NISP), na.rm=T)
+sum(as.numeric(df_Meta$`Total Fish NISP`), na.rm=T)
 
 ###Join all datasets together with taxonomic information
 taxa_new<-taxa_meta
 df_NISP_new<-merge(df_all, taxa_new, all.x = T, by="Original_name")
 sum(as.numeric(df_NISP_new$NISP), na.rm=T)
+df_NISP_new<-df_NISP_new[!is.na(df_NISP_new$`NSS unique ID`),]
 new<-df_NISP_new[is.na(df_NISP_new$Taxa_cleaned),]
-#The 15 Belgium assemblages that don't have fish taxa listed here only
-
 df_NISP_new<-df_NISP_new[!is.na(df_NISP_new$Taxa_cleaned),]
+
 ###Summary stats of taxon (old)
 #cols <- c("Taxa_cleaned", "GBIF_class", "GBIF_order", 
 #          "GBIF_family", "GBIF_genus", "GBIF_species")
@@ -787,7 +880,7 @@ df_final %>%
 df_final$`Decimal Latitude`<-round(as.numeric(df_final$`Decimal Latitude`),3)
 df_final$`Decimal Longitude`<-round(as.numeric(df_final$`Decimal Longitude`),3)
 
-df_NISP_new %>% 
+df_final %>% 
   dplyr::summarise(SiteCount = n_distinct(`Site name`),
                    AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
                    total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
@@ -797,7 +890,7 @@ df_NISP_new %>%
                    OrderCount = n_distinct(`GBIF_order`),
                    ClassCount = n_distinct(`GBIF_class`))
 
-df_NISP_new %>% 
+df_final %>% 
   dplyr::group_by(database) %>%
   dplyr::summarise(SiteCount = n_distinct(`Site name`),
                    AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
@@ -830,6 +923,16 @@ df_final %>%
   dplyr::filter(!is.na(GBIF_family),
          !GBIF_family=="NA") %>%
   dplyr::group_by(region) %>%
+  dplyr::summarise(SiteCount = n_distinct(`Site name`),
+                   AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
+                   total_NISP = sum(as.numeric(NISP), na.rm = TRUE),
+                   SpeciesCount = n_distinct(`GBIF_species`),
+                   GeneraCount = n_distinct(`GBIF_genus`),
+                   FamilyCount = n_distinct(`GBIF_family`),
+                   OrderCount = n_distinct(`GBIF_order`),
+                   ClassCount = n_distinct(`GBIF_class`))
+
+df_final %>% 
   dplyr::summarise(SiteCount = n_distinct(`Site name`),
                    AssemblageCount = n_distinct(`Assemblage or sub-assemblage`),
                    total_NISP = sum(as.numeric(NISP), na.rm = TRUE),

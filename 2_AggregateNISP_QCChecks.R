@@ -476,8 +476,10 @@ df_tmp %>%
     .groups = "drop"
   )
 
-df_tmp %>% 
-  summarise(
+df_tmp %>%
+  dplyr::filter(!GBIF_species=="NA",
+                !is.na(GBIF_species)) %>%
+  dplyr::summarise(
     Total_NISP = sum(NISP, na.rm=TRUE),
     Assemblage_count = n_distinct(Lumped_NSS_IDs)
   )
@@ -486,8 +488,8 @@ df_tmp$NISP %>% as.numeric() %>%
   sum(na.rm=T)
 length(unique(df_tmp$Lumped_NSS_IDs))
 
-#N=1521
-#NISP=1,378,018
+#N=1549
+#NISP=1,409,958
 
 ###Add regions, temperature and time midpoints, and timebins
 df_species<-df_tmp
@@ -566,7 +568,8 @@ df_new_with_cities_b %>%
   )
 
 df_new_with_cities_b %>% 
-  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::filter(!GBIF_species == "NA",
+                !is.na(GBIF_species)) %>%
   dplyr::summarize(NISP = sum(NISP),
                    Assemblage_count = n_distinct(DB_Assemblage_ID))
 
@@ -650,4 +653,6 @@ df_supp %>%
 
 #NISP = 624,799
 #N = 1309
+
+write_xlsx(df_supp, "NSS_SpeciesData_Sept2025_noPE.xlsx", col_names = TRUE, format_headers = TRUE)
 

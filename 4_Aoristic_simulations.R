@@ -26,11 +26,12 @@ source("../ThemePublish.R")
 source("MANUSCRIPT_functions.R")
 
 #3. setup data
+#write_xlsx(df_new_with_cities_b, "NSS_SpeciesData_Sept2025_noPE.xlsx", col_names = TRUE, format_headers = TRUE)
 #n_cols <- readxl::read_xlsx("NSS_SpeciesData_Sept2025_noPE.xlsx", n_max = 0) %>% ncol()
 #df_species <- readxl::read_xlsx(
 #  "NSS_SpeciesData_Sept2025_noPE.xlsx",
 #  col_types = rep("text", n_cols)   # force all columns to character)
-df_species<-df_new_with_cities_b
+df_species<-df_supp
 
 df_species$NISP<-as.numeric(df_species$NISP)
 df_species<-df_species[!is.na(df_species$GBIF_species),]
@@ -86,6 +87,7 @@ NSS_sp %>%
     Total_NISP = sum(NISP, na.rm=TRUE),
     Assemblage_count = n_distinct(DB_Assemblage_ID)
   )
+
 NSS_sp<-NSS_sp[!is.na(NSS_sp$Region),]
 NSS_sp %>%
   dplyr::group_by(Region) %>%
@@ -202,8 +204,6 @@ for (i in seq_along(repeats)) {
 # 2) Populate with one simulated year per row/column (non-vectorised)
 bin_size <- 100
 for (i in seq_along(repeats)) {
-  # optional: set.seed(1000 + i)
-  
   for (j in seq_len(nrow(NSS_sp_tmp))) {
     NSS_sp_tmp[j, repeats[i]] <- generate_random_time_data(
       NSS_sp_tmp$start_date_CE_final_num[j],
@@ -229,3 +229,9 @@ NSS_sp_tmp_all %>%
 
 ###For abba
 write_xlsx(NSS_sp_tmp_all[,c(1:50)], "df_species_with_100yrtime_increments_Sept2025_Abba.xlsx")
+
+NSS_sp_tmp_all %>%
+  dplyr::filter(!GBIF_species == "NA") %>%
+  dplyr::summarize(NISP = sum(NISP),
+                   Assemblage_count = n_distinct(DB_Assemblage_ID))
+
